@@ -1,0 +1,11 @@
+/* frontend/src/index.css */
+
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for the Inter font */
+body {
+  font-family: 'Inter', sans-serif;
+}
