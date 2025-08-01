@@ -23,8 +23,7 @@ const DeletePageButton = () => {
         borderRadius: '4px',
         cursor: pages.size <= 1 ? 'not-allowed' : 'pointer',
         margin: '5px'
-      }}
-    >
+      }} >
       Delete Page
     </button>
   );

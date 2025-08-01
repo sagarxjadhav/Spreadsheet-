@@ -5,7 +5,7 @@ import { SpreadsheetContext } from '../context/SpreadsheetContext';
  * Represents an individual cell in the spreadsheet grid.
  * Handles its own editing state and displays content.
  */
-const Cell = React.memo(({ row, col, cellId }) => {
+const Cell = React.memo(({ row, col, cellId, rowIndex, colIndex }) => {
   // Access global state and functions from SpreadsheetContext
   const { cells, selectedCell, updateCellValue, updateActiveCell, userId, connectedUsers } = useContext(SpreadsheetContext);
 
@@ -41,11 +41,11 @@ const Cell = React.memo(({ row, col, cellId }) => {
 
   // Effect to focus and select text in the input when entering edit mode
   useEffect(() => {
-    if (isSelected && isEditing && inputRef.current) {
+    if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [isSelected, isEditing]);
+  }, [isEditing]);
 
   /**
    * Handles a single click on the cell to select it.
@@ -60,6 +60,25 @@ const Cell = React.memo(({ row, col, cellId }) => {
   const handleDoubleClick = useCallback(() => {
     setIsEditing(true);
     updateActiveCell(cellId); // Also select the cell on double click
+    // Focus the input after a short delay to ensure it's rendered
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 0);
+  }, [cellId, updateActiveCell]);
+
+  /**
+   * Handles keyboard events when the cell is selected but not editing.
+   */
+  const handleCellKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setIsEditing(true);
+      updateActiveCell(cellId);
+    }
+    // Remove arrow key handling from individual cells - let the global handler manage it
   }, [cellId, updateActiveCell]);
 
   /**
@@ -78,14 +97,20 @@ const Cell = React.memo(({ row, col, cellId }) => {
   }, [cellId, localValue, updateCellValue]);
 
   /**
-   * Handles keydown events in the input, specifically for 'Enter' to save.
+   * Handles keydown events in the input, specifically for 'Enter' to save and arrow key navigation.
    */
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault(); // Prevent new line in input field
       setIsEditing(false);
       updateCellValue(cellId, localValue); // Update global state and broadcast
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      // If we're editing, save the value first and exit edit mode
+      setIsEditing(false);
+      updateCellValue(cellId, localValue);
+      // Let the global handler manage navigation
     }
+    // For all other keys, allow normal typing behavior
   }, [cellId, localValue, updateCellValue]);
 
   // Dynamic CSS classes for cell styling based on state
@@ -94,7 +119,7 @@ const Cell = React.memo(({ row, col, cellId }) => {
     ${isSelected ? 'bg-blue-100 border-blue-500 ring-2 ring-blue-500' : 'bg-white hover:bg-gray-50'}
     ${isOtherUserEditing ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-500' : ''}
     ${cellData.error ? 'bg-red-100 border-red-500 text-red-700' : ''}
-    rounded-sm overflow-hidden
+    rounded-sm overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400
   `;
 
   return (
@@ -103,6 +128,8 @@ const Cell = React.memo(({ row, col, cellId }) => {
       className={cellClasses}
       onClick={handleCellClick}
       onDoubleClick={handleDoubleClick}
+      onKeyDown={handleCellKeyDown}
+      tabIndex={isSelected ? 0 : -1} // Make selected cell focusable
     >
       {isEditing ? (
         // Render input field when in editing mode
@@ -114,6 +141,7 @@ const Cell = React.memo(({ row, col, cellId }) => {
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           className="w-full h-full p-1 text-sm bg-transparent focus:outline-none"
+          autoFocus
         />
       ) : (
         // Render span with display value when not editing
