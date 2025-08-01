@@ -5,6 +5,8 @@ import HeaderCell from './HeaderCell';
 import { SpreadsheetContext } from '../context/SpreadsheetContext';
 import { getColumnLetter, getColumnIndex } from '../utils/spreadsheetUtils';
 
+
+// setting up the grid
 const SpreadsheetGrid = () => {
     const { updateActiveCell, updateCellValue, sortState, handleSort, sortedRows, selectedCell } = useContext(SpreadsheetContext);
     const rows = 100;
@@ -17,6 +19,8 @@ const SpreadsheetGrid = () => {
         minHeight: `${30 + rows * 30}px`,
     };
 
+
+    // creating column and row headers
     const columnHeaders = Array.from({ length: cols }, (_, i) => i);
     const rowHeaders = sortedRows || Array.from({ length: rows }, (_, i) => i + 1);
 
